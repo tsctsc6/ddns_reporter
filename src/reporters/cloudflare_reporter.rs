@@ -3,6 +3,7 @@ use crate::reporters::reporter::Reporter;
 use reqwest::Client;
 use std::net::Ipv6Addr;
 use async_trait::async_trait;
+use serde_json::Value;
 
 pub struct CloudflareReporter {
     client: Client,
@@ -44,6 +45,8 @@ impl Reporter for CloudflareReporter {
         let mut payload = payload.as_object_mut().unwrap();
         payload.remove("created_on").unwrap();
         payload.remove("modified_on").unwrap();
+        let ip_value = payload.get_mut("content").unwrap();
+        *ip_value = Value::String(ipv6addr.to_string());
         let payload = serde_json::to_string_pretty(&payload).unwrap();
         let response = self
             .client

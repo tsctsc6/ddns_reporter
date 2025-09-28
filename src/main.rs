@@ -26,7 +26,6 @@ async fn main() {
             return;
         }
     };
-    println!("{:#?}", app_config);
     let reporter = create_reporter(app_config);
 
     let mut set = IfWatcher::new().unwrap();

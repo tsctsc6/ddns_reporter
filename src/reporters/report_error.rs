@@ -1,4 +1,5 @@
-﻿use thiserror::Error;
+﻿use serde_json::Error;
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum ReportError {
@@ -6,6 +7,8 @@ pub enum ReportError {
     Network(#[from] reqwest::Error),
     #[error("Business error: {0}")]
     Business(#[from] SimpleError),
+    #[error("Json error: {0}")]
+    Err(#[from] Error)
 }
 
 #[derive(Error, Debug)]

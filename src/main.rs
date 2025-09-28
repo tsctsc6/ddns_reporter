@@ -2,7 +2,7 @@ mod config;
 mod reporters;
 
 use crate::config::AppConfig;
-use crate::reporters::reporter::{Reporter, create_reporter};
+use crate::reporters::reporter::create_reporter;
 use ::config::{Config, File};
 use futures::StreamExt;
 use if_watch::smol::IfWatcher;
@@ -28,7 +28,13 @@ async fn main() {
     };
     let reporter = create_reporter(app_config);
 
-    let mut set = IfWatcher::new().unwrap();
+    let mut set = match IfWatcher::new() {
+        Ok(set) => set,
+        Err(e) => {
+            println!("{}", e);
+            return;
+        }
+    };
     loop {
         let event = set.select_next_some().await;
         let event = match event {

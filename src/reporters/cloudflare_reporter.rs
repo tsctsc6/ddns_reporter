@@ -1,9 +1,9 @@
 use crate::reporters::report_error::{ReportError, SimpleError};
 use crate::reporters::reporter::Reporter;
-use reqwest::Client;
-use std::net::Ipv6Addr;
 use async_trait::async_trait;
+use reqwest::Client;
 use serde_json::Value;
+use std::net::Ipv6Addr;
 
 pub struct CloudflareReporter {
     client: Client,
@@ -40,14 +40,42 @@ impl Reporter for CloudflareReporter {
             .await?;
         // 构建 JSON 数据
         let payload = response.text().await?;
-        let mut payload = serde_json::from_str::<serde_json::Value>(&payload).unwrap();
-        let mut payload = &mut payload["result"];
-        let mut payload = payload.as_object_mut().unwrap();
-        payload.remove("created_on").unwrap();
-        payload.remove("modified_on").unwrap();
-        let ip_value = payload.get_mut("content").unwrap();
+        let mut payload = serde_json::from_str::<Value>(&payload)?;
+        let payload = &mut payload["result"];
+        let payload = match payload.as_object_mut() {
+            Some(x) => x,
+            None => {
+                return Err(ReportError::Business(SimpleError::from(
+                    "Failed to parse response".to_string(),
+                )));
+            }
+        };
+        match payload.remove("created_on") {
+            Some(x) => x,
+            None => {
+                return Err(ReportError::Business(SimpleError::from(
+                    "Failed to remove created_on from response".to_string(),
+                )));
+            }
+        };
+        match payload.remove("modified_on") {
+            Some(x) => x,
+            None => {
+                return Err(ReportError::Business(SimpleError::from(
+                    "Failed to remove modified_on from response".to_string(),
+                )));
+            }
+        };
+        let ip_value = match payload.get_mut("content") {
+            Some(x) => x,
+            None => {
+                return Err(ReportError::Business(SimpleError::from(
+                    "Failed to get content from response".to_string(),
+                )));
+            }
+        };
         *ip_value = Value::String(ipv6addr.to_string());
-        let payload = serde_json::to_string_pretty(&payload).unwrap();
+        let payload = serde_json::to_string(&payload)?;
         let response = self
             .client
             .get(format!(

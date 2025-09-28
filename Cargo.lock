@@ -410,6 +410,7 @@ dependencies = [
 name = "ddns_reporter"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "config",
  "futures",
  "if-watch",

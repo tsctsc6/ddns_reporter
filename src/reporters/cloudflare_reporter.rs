@@ -1,8 +1,8 @@
 use crate::reporters::report_error::{ReportError, SimpleError};
 use crate::reporters::reporter::Reporter;
 use reqwest::Client;
-use serde_json::json;
 use std::net::Ipv6Addr;
+use async_trait::async_trait;
 
 pub struct CloudflareReporter {
     client: Client,
@@ -22,6 +22,7 @@ impl CloudflareReporter {
     }
 }
 
+#[async_trait]
 impl Reporter for CloudflareReporter {
     async fn report(&self, ipv6addr: Ipv6Addr) -> Result<(), ReportError> {
         let response = self

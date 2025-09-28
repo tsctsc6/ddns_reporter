@@ -1,6 +1,10 @@
+mod reporters;
+
+use crate::reporters::cloudflare_reporter::CloudflareReporter;
 use futures::StreamExt;
 use if_watch::smol::IfWatcher;
 use if_watch::{IfEvent, IpNet};
+use crate::reporters::reporter::Reporter;
 
 #[tokio::main]
 async fn main() {
@@ -25,6 +29,7 @@ async fn main() {
         if ip.addr().is_unique_local() {
             continue;
         }
+        reporter.report(ip.addr()).await;
         println!("{}", ip);
     }
 }

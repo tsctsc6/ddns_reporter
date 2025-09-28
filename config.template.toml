@@ -1,0 +1,6 @@
+ddns_server = "Cloudflare"
+
+[Cloudflare]
+zone_id = ""
+dns_record_id = ""
+token = ""

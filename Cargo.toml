@@ -7,3 +7,8 @@ edition = "2024"
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros"] }
 if-watch = { version = "3", features = ["smol"] }
 futures = "0.3.31"
+reqwest = { version = "0", features = ["json"] }
+serde_json = "1"
+thiserror = "1"
+config = "0"
+serde = { version = "1", features = ["derive"] }

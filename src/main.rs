@@ -4,6 +4,7 @@ mod reporters;
 use crate::config::AppConfig;
 use crate::reporters::reporter::create_reporter;
 use ::config::{Config, File};
+use chrono::prelude::*;
 use futures::StreamExt;
 use if_watch::smol::IfWatcher;
 use if_watch::{IfEvent, IpNet};
@@ -62,6 +63,6 @@ async fn main() {
                 println!("{:#?}", e);
             }
         }
-        println!("{}", ip);
+        println!("[{}] Up: {}", Utc::now(), ip);
     }
 }

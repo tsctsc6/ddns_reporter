@@ -76,9 +76,10 @@ impl Reporter for CloudflareReporter {
         };
         *ip_value = Value::String(ipv6addr.to_string());
         let payload = serde_json::to_string(&payload)?;
+        //println!("{}", payload);
         let response = self
             .client
-            .get(format!(
+            .patch(format!(
                 "https://api.cloudflare.com/client/v4/zones/{}/dns_records/{}",
                 self.zone_id, self.dns_record_id
             ))
@@ -86,7 +87,7 @@ impl Reporter for CloudflareReporter {
                 reqwest::header::AUTHORIZATION,
                 format!("Bearer {}", self.token),
             )
-            .json(payload.as_str())
+            .body(payload)
             .send()
             .await?;
         if !response.status().is_success() {
@@ -94,6 +95,7 @@ impl Reporter for CloudflareReporter {
                 response.text().await?,
             )));
         }
+        //println!("{:#?}", response.text().await?);
         Ok(())
     }
 }

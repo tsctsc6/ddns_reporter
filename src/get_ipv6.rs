@@ -31,15 +31,14 @@ pub fn get_ipv6(network_name: &str) -> Option<Ipv6Addr> {
             if ip.is_unicast_link_local() {
                 return false;
             }
-            return true;
+            true
         })
         .collect();
     let mut rng = rand::rng();
     let random_ip = global_network_interfaces[rng.random_range(..global_network_interfaces.len())];
     info!("Select: {}: {:?}", random_ip.0, random_ip.1);
-    let ip = match random_ip.1 {
+    match random_ip.1 {
         IpAddr::V4(_) => None,
         IpAddr::V6(ip) => Some(ip),
-    };
-    ip
+    }
 }

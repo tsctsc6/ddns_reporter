@@ -1,7 +1,6 @@
 ﻿use crate::get_ipv6::get_ipv6;
 use crate::reporters::reporter::Reporter;
 use log::error;
-use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::mpsc;
 use tokio::time::{Instant, sleep};
@@ -43,7 +42,7 @@ impl<T: Reporter + ?Sized + 'static> DebounceManager<T> {
                                         },
                                         Some(ipv6) => {ipv6}
                                     };
-                                    _ = match reporter.report(ip).await {
+                                    match reporter.report(ip).await {
                                         Ok(_) => {}
                                         Err(e) => {error!("Report failed: {:?}", e);}
                                     };
@@ -73,6 +72,7 @@ impl<T: Reporter + ?Sized + 'static> DebounceManager<T> {
     }
 
     // 关闭后台任务
+    #[allow(dead_code)]
     pub async fn shutdown(self) {
         let _ = self.shutdown_tx.send(()).await;
         self.task_handle.await.ok();

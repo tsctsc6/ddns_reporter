@@ -5,7 +5,6 @@ mod reporters;
 
 use crate::config::AppConfig;
 use crate::debounce_manager::DebounceManager;
-use crate::get_ipv6::get_ipv6;
 use crate::reporters::reporter::{Reporter, create_reporter};
 use ::config::{Config, File as ConfigFile};
 use futures::StreamExt;
@@ -16,8 +15,9 @@ use tracing_appender::{
     non_blocking,
     rolling::{RollingFileAppender, Rotation},
 };
-use tracing_subscriber::fmt::writer::MakeWriterExt;
-use tracing_subscriber::{Layer, filter, layer::SubscriberExt, util::SubscriberInitExt};
+use tracing_subscriber::{
+    Layer, filter, layer::SubscriberExt, util::SubscriberInitExt,
+};
 
 fn setup_logging() {
     // 1. 创建文件轮转appender（每小时轮转）

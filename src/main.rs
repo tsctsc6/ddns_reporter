@@ -15,9 +15,7 @@ use tracing_appender::{
     non_blocking,
     rolling::{RollingFileAppender, Rotation},
 };
-use tracing_subscriber::{
-    Layer, filter, layer::SubscriberExt, util::SubscriberInitExt,
-};
+use tracing_subscriber::{Layer, filter, layer::SubscriberExt, util::SubscriberInitExt};
 
 fn setup_logging() {
     // 1. 创建文件轮转appender
@@ -71,10 +69,13 @@ async fn main() {
         }
     };
 
-    let reporter = create_reporter(app_config);
+    let reporter = create_reporter(&app_config);
 
-    let debouncer: DebounceManager<dyn Reporter> =
-        DebounceManager::new(Duration::from_secs(1), String::from("以太网"), reporter);
+    let debouncer: DebounceManager<dyn Reporter> = DebounceManager::new(
+        Duration::from_secs(1),
+        app_config.network_name,
+        reporter,
+    );
 
     let mut set = match IfWatcher::new() {
         Ok(set) => set,

@@ -1,6 +1,7 @@
 ddns_server = "Cloudflare"
+network_name = "以太网"
 
-[Cloudflare]
+[cloudflare]
 zone_id = ""
 dns_record_id = ""
 token = ""

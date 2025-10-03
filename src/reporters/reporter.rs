@@ -9,7 +9,7 @@ pub trait Reporter: Send + Sync {
     async fn report(&self, ipv6addr: Ipv6Addr) -> Result<(), ReportError>; // 方法签名
 }
 
-pub fn create_reporter(app_config: AppConfig) -> Box<dyn Reporter> {
+pub fn create_reporter(app_config: &AppConfig) -> Box<dyn Reporter> {
     match app_config.ddns_server {
         DdnsServer::Cloudflare => Box::new(CloudflareReporter::new(
             &app_config.cloudflare.zone_id,

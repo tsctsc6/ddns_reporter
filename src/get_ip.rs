@@ -2,7 +2,7 @@
 use rand::Rng;
 use std::net::{IpAddr, Ipv6Addr};
 
-fn get_ipv6() -> Option<Ipv6Addr> {
+fn get_ipv6(network_name: &str) -> Option<Ipv6Addr> {
     let network_interfaces = list_afinet_netifas();
 
     let network_interfaces = match network_interfaces {
@@ -15,6 +15,9 @@ fn get_ipv6() -> Option<Ipv6Addr> {
     let global_network_interfaces: Vec<_> = network_interfaces
         .iter()
         .filter(|(name, ip)| {
+            if network_name != name {
+                return false;
+            }
             let ip = match ip {
                 IpAddr::V4(_) => {
                     return false;

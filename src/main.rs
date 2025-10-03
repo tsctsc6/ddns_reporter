@@ -1,5 +1,7 @@
 mod config;
 mod reporters;
+mod debounce_manager;
+mod get_ip;
 
 use crate::config::AppConfig;
 use crate::reporters::reporter::create_reporter;

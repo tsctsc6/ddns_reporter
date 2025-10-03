@@ -1,15 +1,20 @@
 mod config;
-mod reporters;
 mod debounce_manager;
-mod get_ip;
+mod get_ipv6;
+mod reporters;
 
 use crate::config::AppConfig;
-use crate::reporters::reporter::create_reporter;
+use crate::debounce_manager::DebounceManager;
+use crate::get_ipv6::get_ipv6;
+use crate::reporters::reporter::{Reporter, create_reporter};
 use ::config::{Config, File};
-use chrono::prelude::*;
 use futures::StreamExt;
 use if_watch::smol::IfWatcher;
-use if_watch::{IfEvent, IpNet};
+use log::{error, info};
+use std::env;
+use std::process::Termination;
+use std::sync::{Arc, LockResult, Mutex, MutexGuard};
+use std::time::Duration;
 
 #[tokio::main]
 async fn main() {
@@ -18,53 +23,40 @@ async fn main() {
     let config = match config {
         Ok(c) => c,
         Err(e) => {
-            println!("{:?}", e);
+            error!("{:?}", e);
             return;
         }
     };
     let app_config: AppConfig = match config.try_deserialize::<AppConfig>() {
         Ok(config) => config,
         Err(e) => {
-            println!("{:?}", e);
+            error!("{:?}", e);
             return;
         }
     };
+
+    // 设置日志级别
+    unsafe {
+        env::set_var("RUST_LOG", "debug");
+    }
+    // 初始化 env_logger
+    env_logger::init();
+
     let reporter = create_reporter(app_config);
+
+    let debouncer: DebounceManager<dyn Reporter> =
+        DebounceManager::new(Duration::from_secs(1), String::from("以太网"), reporter);
 
     let mut set = match IfWatcher::new() {
         Ok(set) => set,
         Err(e) => {
-            println!("{}", e);
+            error!("{:?}", e);
             return;
         }
     };
     loop {
         let event = set.select_next_some().await;
-        let event = match event {
-            Ok(r) => r,
-            Err(_) => continue,
-        };
-        let ip = match event {
-            IfEvent::Up(ip) => ip,
-            IfEvent::Down(_) => continue,
-        };
-        let ip = match ip {
-            IpNet::V4(_) => continue,
-            IpNet::V6(ipv6) => ipv6,
-        };
-        if ip.addr().is_loopback() {
-            continue;
-        }
-        if ip.addr().is_unique_local() {
-            continue;
-        }
-        let report_result = reporter.report(ip.addr()).await;
-        match report_result {
-            Ok(_) => {}
-            Err(e) => {
-                println!("{:#?}", e);
-            }
-        }
-        println!("[{}] Up: {}", Utc::now(), ip);
+        debouncer.trigger().await;
+        info!("{:?}", event);
     }
 }

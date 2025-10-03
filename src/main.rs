@@ -77,6 +77,8 @@ async fn main() {
     std::fs::create_dir_all("logs").expect("创建日志目录失败");
     setup_logging(&app_config.log_level);
 
+    info!("App started");
+
     let reporter = create_reporter(&app_config);
 
     let debouncer: DebounceManager<dyn Reporter> =

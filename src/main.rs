@@ -20,7 +20,7 @@ use tracing_subscriber::{
 };
 
 fn setup_logging() {
-    // 1. 创建文件轮转appender（每小时轮转）
+    // 1. 创建文件轮转appender
     let file_appender = RollingFileAppender::new(Rotation::DAILY, "logs", "ddns_reporter.log");
 
     // 2. 非阻塞写入器（提高性能）

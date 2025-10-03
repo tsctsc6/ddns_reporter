@@ -71,11 +71,8 @@ async fn main() {
 
     let reporter = create_reporter(&app_config);
 
-    let debouncer: DebounceManager<dyn Reporter> = DebounceManager::new(
-        Duration::from_secs(1),
-        app_config.network_name,
-        reporter,
-    );
+    let debouncer: DebounceManager<dyn Reporter> =
+        DebounceManager::new(Duration::from_secs(1), app_config.network_name, reporter);
 
     let mut set = match IfWatcher::new() {
         Ok(set) => set,

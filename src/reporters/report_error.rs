@@ -8,7 +8,7 @@ pub enum ReportError {
     #[error("Business error: {0}")]
     Business(#[from] SimpleError),
     #[error("Json error: {0}")]
-    Err(#[from] Error)
+    Err(#[from] Error),
 }
 
 #[derive(Error, Debug)]

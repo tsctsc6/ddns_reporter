@@ -4,12 +4,12 @@
 pub struct AppConfig {
     pub ddns_server: DdnsServer,
     pub network_name: String,
-    pub cloudflare: CloudflareConfig
+    pub cloudflare: CloudflareConfig,
 }
 
 #[derive(Debug, Deserialize)]
-pub enum DdnsServer{
-    Cloudflare
+pub enum DdnsServer {
+    Cloudflare,
 }
 
 #[derive(Debug, Deserialize)]

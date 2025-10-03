@@ -13,7 +13,11 @@ pub struct DebounceManager<T: Reporter + ?Sized> {
 }
 
 impl<T: Reporter + ?Sized + 'static> DebounceManager<T> {
-    pub fn new(debounce_duration: Duration, network_name: String, reporter: Box<dyn Reporter>) -> Self {
+    pub fn new(
+        debounce_duration: Duration,
+        network_name: String,
+        reporter: Box<dyn Reporter>,
+    ) -> Self {
         let (trigger_tx, trigger_rx) = mpsc::channel(100);
         let (shutdown_tx, mut shutdown_rx) = mpsc::channel(1);
 

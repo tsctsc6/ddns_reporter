@@ -1,5 +1,6 @@
 ddns_server = "Cloudflare"
 network_name = "以太网"
+log_level = "Trace"
 
 [cloudflare]
 zone_id = ""

@@ -1,4 +1,5 @@
 ﻿use local_ip_address::list_afinet_netifas;
+use log::{error, info};
 use rand::Rng;
 use std::net::{IpAddr, Ipv6Addr};
 
@@ -8,7 +9,7 @@ pub fn get_ipv6(network_name: &str) -> Option<Ipv6Addr> {
     let network_interfaces = match network_interfaces {
         Ok(network_interfaces) => network_interfaces,
         Err(e) => {
-            println!("Error getting network interfaces: {:?}", e);
+            error!("Error getting network interfaces: {:?}", e);
             return None;
         }
     };
@@ -33,13 +34,9 @@ pub fn get_ipv6(network_name: &str) -> Option<Ipv6Addr> {
             return true;
         })
         .collect();
-    for (name, ip) in global_network_interfaces.iter() {
-        println!("{}:\t{:?}", name, ip);
-    }
-    println!();
     let mut rng = rand::rng();
     let random_ip = global_network_interfaces[rng.random_range(..global_network_interfaces.len())];
-    println!("{}:\t{:?}", random_ip.0, random_ip.1);
+    info!("Select: {}: {:?}", random_ip.0, random_ip.1);
     let ip = match random_ip.1 {
         IpAddr::V4(_) => None,
         IpAddr::V6(ip) => Some(ip),

@@ -4,6 +4,7 @@ use async_trait::async_trait;
 use reqwest::Client;
 use serde_json::Value;
 use std::net::Ipv6Addr;
+use log::debug;
 
 pub struct CloudflareReporter {
     client: Client,
@@ -74,9 +75,9 @@ impl Reporter for CloudflareReporter {
                 )));
             }
         };
+        debug!("origin ip: {}", ip_value);
         *ip_value = Value::String(ipv6addr.to_string());
         let payload = serde_json::to_string(&payload)?;
-        //println!("{}", payload);
         let response = self
             .client
             .patch(format!(
@@ -95,7 +96,7 @@ impl Reporter for CloudflareReporter {
                 response.text().await?,
             )));
         }
-        //println!("{:#?}", response.text().await?);
+        debug!("response: {:#?}", response.text().await?);
         Ok(())
     }
 }

@@ -13,7 +13,7 @@ pub fn get_ipv6(network_name: &str) -> Option<Ipv6Addr> {
             return None;
         }
     };
-    let global_network_interfaces: Vec<_> = network_interfaces
+    let global_ipv6_addrs: Vec<_> = network_interfaces
         .iter()
         .filter(|(name, ip)| {
             if network_name != name {
@@ -34,8 +34,11 @@ pub fn get_ipv6(network_name: &str) -> Option<Ipv6Addr> {
             true
         })
         .collect();
+    // For windows and linux, the first ip is not temporary.
+    let temporary_global_ipv6_addrs: Vec<_> = global_ipv6_addrs.iter().skip(1).collect();
     let mut rng = rand::rng();
-    let random_ip = global_network_interfaces[rng.random_range(..global_network_interfaces.len())];
+    let random_ip =
+        temporary_global_ipv6_addrs[rng.random_range(..temporary_global_ipv6_addrs.len())];
     info!("Select: {}: {:?}", random_ip.0, random_ip.1);
     match random_ip.1 {
         IpAddr::V4(_) => None,

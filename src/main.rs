@@ -5,13 +5,15 @@ mod reporters;
 
 use crate::config::{AppConfig, LogLevel};
 use crate::debounce_manager::DebounceManager;
-use crate::reporters::reporter::{Reporter, create_reporter};
+use crate::get_ipv6::get_ipv6;
+use crate::reporters::reporter::create_reporter;
 use ::config::{Config, File as ConfigFile};
 use futures::StreamExt;
 use if_watch::smol::IfWatcher;
-use if_watch::{IfEvent, IpNet};
+use if_watch::{IfEvent};
 use log::{error, info};
-use std::net::IpAddr;
+use std::net::{IpAddr};
+use std::sync::Arc;
 use std::time::Duration;
 use tracing_appender::{
     non_blocking,
@@ -82,9 +84,28 @@ async fn main() {
     info!("App started");
 
     let reporter = create_reporter(&app_config);
+    let network_name = app_config.network_name.clone();
 
-    let debouncer: DebounceManager<dyn Reporter> =
-        DebounceManager::new(Duration::from_secs(1), app_config.network_name, reporter);
+    let closer = {
+        let reporter = Arc::clone(&reporter);
+        let network_name = network_name.clone();
+        move || {
+            let reporter = Arc::clone(&reporter);
+            let network_name = network_name.clone();
+            async move {
+                let ipv6 = match get_ipv6(network_name.as_str()) {
+                    None => return,
+                    Some(ipv6) => ipv6,
+                };
+                match reporter.report(ipv6).await {
+                    Ok(_) => info!("Report complete: {}", ipv6),
+                    Err(e) => error!("{:?}", e),
+                };
+            }
+        }
+    };
+
+    let debouncer = DebounceManager::new(closer, Duration::from_secs(1));
 
     let mut set = match IfWatcher::new() {
         Ok(set) => set,

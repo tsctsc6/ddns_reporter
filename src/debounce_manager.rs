@@ -1,23 +1,19 @@
-﻿use crate::get_ipv6::get_ipv6;
-use crate::reporters::reporter::Reporter;
-use log::error;
-use std::time::Duration;
+﻿use std::time::Duration;
 use tokio::sync::mpsc;
 use tokio::time::{Instant, sleep};
 
-pub struct DebounceManager<T: Reporter + ?Sized> {
+pub(crate) struct DebounceManager {
     trigger_tx: mpsc::Sender<()>,
     shutdown_tx: mpsc::Sender<()>,
     task_handle: tokio::task::JoinHandle<()>,
-    _phantom: std::marker::PhantomData<T>,
 }
 
-impl<T: Reporter + ?Sized + 'static> DebounceManager<T> {
-    pub fn new(
-        debounce_duration: Duration,
-        network_name: String,
-        reporter: Box<dyn Reporter>,
-    ) -> Self {
+impl DebounceManager {
+    pub fn new<F, Fut>(closer: F, debounce_duration: Duration) -> Self
+    where
+        F: Fn() -> Fut + Send + Sync + 'static,
+        Fut: Future<Output = ()> + Send + 'static,
+    {
         let (trigger_tx, trigger_rx) = mpsc::channel(100);
         let (shutdown_tx, mut shutdown_rx) = mpsc::channel(1);
 
@@ -34,29 +30,15 @@ impl<T: Reporter + ?Sized + 'static> DebounceManager<T> {
                         break;
                     }
                     _ = async {
-                        match last_trigger_time {
-                            Some(last_time) => {
-                                sleep(last_time + debounce_duration - Instant::now()).await;
-                                if last_trigger_time.map(|t| t == last_time).unwrap_or(false) {
-                                    let ip = match get_ipv6(network_name.as_str()) {
-                                        None => {
-                                            error!("Get ipv6 failed");
-                                            last_trigger_time = None;
-                                            return;
-                                        },
-                                        Some(ipv6) => {ipv6}
-                                    };
-                                    match reporter.report(ip).await {
-                                        Ok(_) => {}
-                                        Err(e) => {error!("Report failed: {:?}", e);}
-                                    };
-                                    last_trigger_time = None;
-                                }
+                        if let Some(last_time) = last_trigger_time {
+                            sleep(last_time + debounce_duration - Instant::now()).await;
+                            if last_trigger_time.map(|t| t == last_time).unwrap_or(false) {
+                                closer().await;
+                                last_trigger_time = None;
                             }
-                            None => {
-                                // 如果没有触发事件，等待更长时间
-                                sleep(Duration::MAX).await;
-                            }
+                        } else {
+                            // 如果没有触发事件，等待更长时间
+                            sleep(Duration::MAX).await;
                         }
                     } => {}
                 }
@@ -67,16 +49,16 @@ impl<T: Reporter + ?Sized + 'static> DebounceManager<T> {
             trigger_tx,
             shutdown_tx,
             task_handle,
-            _phantom: std::marker::PhantomData,
         }
     }
 
+    // 触发 A 方法（发送事件）
     pub async fn trigger(&self) {
         let _ = self.trigger_tx.send(()).await;
     }
 
-    // 关闭后台任务
     #[allow(dead_code)]
+    // 关闭后台任务
     pub async fn shutdown(self) {
         let _ = self.shutdown_tx.send(()).await;
         self.task_handle.await.ok();

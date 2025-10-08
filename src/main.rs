@@ -9,7 +9,9 @@ use crate::reporters::reporter::{Reporter, create_reporter};
 use ::config::{Config, File as ConfigFile};
 use futures::StreamExt;
 use if_watch::smol::IfWatcher;
+use if_watch::{IfEvent, IpNet};
 use log::{error, info};
+use std::net::IpAddr;
 use std::time::Duration;
 use tracing_appender::{
     non_blocking,
@@ -93,6 +95,20 @@ async fn main() {
     };
     loop {
         let event = set.select_next_some().await;
+        let event = match event {
+            Ok(event) => event,
+            Err(_) => continue,
+        };
+        let event = match event {
+            IfEvent::Up(event) => event,
+            IfEvent::Down(event) => event,
+        };
+        match event.network() {
+            IpAddr::V6(_) => {}
+            _ => {
+                continue;
+            }
+        }
         debouncer.trigger().await;
         info!("{:?}", event);
     }

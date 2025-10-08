@@ -120,11 +120,11 @@ async fn main() {
             Ok(event) => event,
             Err(_) => continue,
         };
-        let event = match event {
+        let event2 = match event {
             IfEvent::Up(event) => event,
             IfEvent::Down(event) => event,
         };
-        match event.network() {
+        match event2.network() {
             IpAddr::V6(_) => {}
             _ => {
                 continue;

@@ -5,6 +5,7 @@ pub struct AppConfig {
     pub ddns_server: DdnsServer,
     pub network_name: String,
     pub log_level: LogLevel,
+    pub debounce_time_in_ms: u64,
     pub cloudflare: CloudflareConfig,
 }
 

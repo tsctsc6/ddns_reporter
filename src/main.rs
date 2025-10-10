@@ -9,10 +9,10 @@ use crate::get_ipv6::get_ipv6;
 use crate::reporters::reporter::create_reporter;
 use ::config::{Config, File as ConfigFile};
 use futures::StreamExt;
+use if_watch::IfEvent;
 use if_watch::smol::IfWatcher;
-use if_watch::{IfEvent};
 use log::{error, info};
-use std::net::{IpAddr};
+use std::net::IpAddr;
 use std::sync::Arc;
 use std::time::Duration;
 use tracing_appender::{
@@ -105,7 +105,10 @@ async fn main() {
         }
     };
 
-    let debouncer = DebounceManager::new(closer, Duration::from_secs(1));
+    let debouncer = DebounceManager::new(
+        closer,
+        Duration::from_millis(app_config.debounce_time_in_ms),
+    );
 
     let mut set = match IfWatcher::new() {
         Ok(set) => set,

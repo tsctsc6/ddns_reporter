@@ -52,7 +52,7 @@ impl DebounceManager {
         }
     }
 
-    // 触发 A 方法（发送事件）
+    // 触发发送事件
     pub async fn trigger(&self) {
         let _ = self.trigger_tx.send(()).await;
     }

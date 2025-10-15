@@ -30,15 +30,16 @@ impl DebounceManager {
                         break;
                     }
                     _ = async {
-                        if let Some(last_time) = last_trigger_time {
-                            sleep(last_time + debounce_duration - Instant::now()).await;
-                            if last_trigger_time.map(|t| t == last_time).unwrap_or(false) {
+                        match last_trigger_time {
+                            Some(last_time) => {
+                                sleep(last_time + debounce_duration - Instant::now()).await;
                                 closer().await;
                                 last_trigger_time = None;
                             }
-                        } else {
-                            // 如果没有触发事件，等待更长时间
-                            sleep(Duration::MAX).await;
+                            None => {
+                                // 如果没有触发事件，等待更长时间
+                                sleep(Duration::MAX).await;
+                            }
                         }
                     } => {}
                 }

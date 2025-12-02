@@ -16,6 +16,7 @@ use std::sync::Arc;
 use std::sync::OnceLock;
 use std::time::Duration;
 use tokio::runtime::{Builder, Handle, Runtime};
+use tokio::task;
 use tokio::task::block_in_place;
 use tokio::time::sleep;
 use tracing_appender::{
@@ -139,10 +140,12 @@ async fn main() {
         }
     };
 
-    let debouncer = DebounceManager::new(
+    let debouncer = Arc::new(DebounceManager::new(
         closer,
         Duration::from_millis(app_config.debounce_time_in_ms),
-    );
+    ));
+    let debouncer_arc = Arc::clone(&debouncer);
+    let rt_handle = Handle::current().clone();
 
     let register_handler_result = netwatcher::watch_interfaces(move |update| {
         debug!("Interfaces added: {:?}", update.diff.added);
@@ -152,7 +155,14 @@ async fn main() {
             debug!("Added IPs: {:?}", if_diff.addrs_added);
             debug!("Removed IPs: {:?}", if_diff.addrs_removed);
         }
-        debouncer.blocking_trigger();
+        // Check if we're currently in a Tokio runtime context
+        if Handle::try_current().is_ok() {
+            // If yes, use block_in_place to temporarily yield the async context
+            block_in_place(|| rt_handle.block_on(debouncer_arc.trigger()))
+        } else {
+            // If not, directly block_on with the cloned handle
+            rt_handle.block_on(debouncer_arc.trigger());
+        }
     });
     let _register_handler = match register_handler_result {
         Ok(h) => h,

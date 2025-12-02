@@ -1,6 +1,8 @@
 ﻿use std::net::Ipv6Addr;
 use std::time::Duration;
 
+// 为了 ipv6 信息的完整性
+#[allow(unused)]
 #[derive(Debug, Clone)]
 pub struct Ipv6AddrInfo {
     pub network_name: String,

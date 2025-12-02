@@ -1,14 +1,12 @@
 mod config;
 mod debounce_manager;
-mod get_ipv6;
 mod get_ipv6_details;
 mod reporters;
 
 use crate::config::{AppConfig, LogLevel};
 use crate::debounce_manager::DebounceManager;
-use crate::get_ipv6::get_ipv6;
 use crate::get_ipv6_details::get_ipv6_addr_info;
-use crate::get_ipv6_details::ipv6addr_info::{AddressType, Ipv6AddrInfo};
+use crate::get_ipv6_details::ipv6addr_info::AddressType;
 use crate::reporters::reporter::create_reporter;
 use ::config::{Config, File as ConfigFile};
 use futures::StreamExt;
@@ -106,6 +104,7 @@ async fn main() {
                 };
                 let ipv6 = ipv6_list
                     .iter()
+                    .filter(|x| -> bool { x.network_name == network_name })
                     .filter(|x| -> bool { x.address_type == AddressType::Temporary })
                     .max_by_key(|x| -> Duration { x.preferred_lifetime });
                 let ipv6 = match ipv6 {

@@ -2,6 +2,7 @@ mod config;
 mod debounce_manager;
 mod get_ipv6;
 mod reporters;
+mod get_ipv6_details;
 
 use crate::config::{AppConfig, LogLevel};
 use crate::debounce_manager::DebounceManager;

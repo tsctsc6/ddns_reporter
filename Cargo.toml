@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros"] }
-if-watch = { version = "3", features = ["smol"] }
+netwatcher = { version = "0" }
 futures = "0.3.31"
 reqwest = { version = "0", features = ["json"] }
 serde_json = "1"

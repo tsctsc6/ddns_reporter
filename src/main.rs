@@ -7,16 +7,12 @@ use crate::config::{AppConfig, LogLevel};
 use crate::debounce_manager::DebounceManager;
 use crate::get_ipv6_details::get_ipv6_addr_info;
 use crate::get_ipv6_details::ipv6addr_info::AddressType;
-use crate::reporters::report_error::ReportError;
 use crate::reporters::reporter::create_reporter;
 use ::config::{Config, File as ConfigFile};
-use futures::future::Lazy;
 use log::{debug, error, info};
 use std::sync::Arc;
-use std::sync::OnceLock;
 use std::time::Duration;
-use tokio::runtime::{Builder, Handle, Runtime};
-use tokio::task;
+use tokio::runtime::Handle;
 use tokio::task::block_in_place;
 use tokio::time::sleep;
 use tracing_appender::{

@@ -60,10 +60,6 @@ impl DebounceManager {
         let _ = self.trigger_tx.send(()).await;
     }
 
-    pub fn blocking_trigger(&self) {
-        let _ = self.trigger_tx.blocking_send(());
-    }
-
     #[allow(dead_code)]
     // 关闭后台任务
     pub async fn shutdown(self) {

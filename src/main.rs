@@ -7,6 +7,7 @@ use crate::config::{AppConfig, LogLevel};
 use crate::debounce_manager::DebounceManager;
 use crate::get_ipv6_details::get_ipv6_addr_info;
 use crate::get_ipv6_details::ipv6addr_info::AddressType;
+use crate::reporters::report_error::ReportError;
 use crate::reporters::reporter::create_reporter;
 use ::config::{Config, File as ConfigFile};
 use futures::StreamExt;
@@ -16,6 +17,7 @@ use log::{error, info};
 use std::net::IpAddr;
 use std::sync::Arc;
 use std::time::Duration;
+use tokio::time::sleep;
 use tracing_appender::{
     non_blocking,
     rolling::{RollingFileAppender, Rotation},
@@ -94,30 +96,50 @@ async fn main() {
             let reporter = Arc::clone(&reporter);
             let network_name = network_name.clone();
             async move {
-                let ipv6_list = get_ipv6_addr_info(network_name.as_str());
-                let ipv6_list = match ipv6_list {
-                    Ok(ipv6_list) => ipv6_list,
-                    Err(e) => {
-                        error!("{:?}", e);
-                        return;
-                    }
-                };
-                let ipv6 = ipv6_list
-                    .iter()
-                    .filter(|x| -> bool { x.network_name == network_name })
-                    .filter(|x| -> bool { x.address_type == AddressType::Temporary })
-                    .max_by_key(|x| -> Duration { x.preferred_lifetime });
-                let ipv6 = match ipv6 {
-                    None => {
-                        error!("Max preferred_lifetime ipv6 not found");
-                        return;
-                    }
-                    Some(ipv6) => ipv6,
-                };
-                match reporter.report(ipv6.address).await {
-                    Ok(_) => info!("Report complete: {}", ipv6.address),
-                    Err(e) => error!("{:?}", e),
-                };
+                let mut wait_time_second = 1u64;
+                loop {
+                    let ipv6_list = get_ipv6_addr_info(network_name.as_str());
+                    let ipv6_list = match ipv6_list {
+                        Ok(ipv6_list) => ipv6_list,
+                        Err(e) => {
+                            error!("{:?}", e);
+                            return;
+                        }
+                    };
+                    let ipv6 = ipv6_list
+                        .iter()
+                        .filter(|x| -> bool { x.network_name == network_name })
+                        .filter(|x| -> bool { x.address_type == AddressType::Temporary })
+                        .max_by_key(|x| -> Duration { x.preferred_lifetime });
+                    let ipv6 = match ipv6 {
+                        None => {
+                            error!("Max preferred_lifetime ipv6 not found");
+                            return;
+                        }
+                        Some(ipv6) => ipv6,
+                    };
+                    sleep(Duration::from_secs(wait_time_second)).await;
+                    match reporter.report(ipv6.address).await {
+                        Ok(_) => {
+                            info!("Report complete: {}", ipv6.address);
+                            break;
+                        }
+                        Err(e) => {
+                            error!("{:?}", e);
+                            match e {
+                                ReportError::Network(_) => {
+                                    wait_time_second = wait_time_second * 2;
+                                }
+                                ReportError::Business(_) => {
+                                    break;
+                                }
+                                ReportError::Err(_) => {
+                                    break;
+                                }
+                            }
+                        }
+                    };
+                }
             }
         }
     };

@@ -1,12 +1,14 @@
 mod config;
 mod debounce_manager;
 mod get_ipv6;
-mod reporters;
 mod get_ipv6_details;
+mod reporters;
 
 use crate::config::{AppConfig, LogLevel};
 use crate::debounce_manager::DebounceManager;
 use crate::get_ipv6::get_ipv6;
+use crate::get_ipv6_details::get_ipv6_addr_info;
+use crate::get_ipv6_details::ipv6addr_info::{AddressType, Ipv6AddrInfo};
 use crate::reporters::reporter::create_reporter;
 use ::config::{Config, File as ConfigFile};
 use futures::StreamExt;
@@ -94,12 +96,27 @@ async fn main() {
             let reporter = Arc::clone(&reporter);
             let network_name = network_name.clone();
             async move {
-                let ipv6 = match get_ipv6(network_name.as_str()) {
-                    None => return,
+                let ipv6_list = get_ipv6_addr_info(network_name.as_str());
+                let ipv6_list = match ipv6_list {
+                    Ok(ipv6_list) => ipv6_list,
+                    Err(e) => {
+                        error!("{:?}", e);
+                        return;
+                    }
+                };
+                let ipv6 = ipv6_list
+                    .iter()
+                    .filter(|x| -> bool { x.address_type == AddressType::Temporary })
+                    .max_by_key(|x| -> Duration { x.preferred_lifetime });
+                let ipv6 = match ipv6 {
+                    None => {
+                        error!("Max preferred_lifetime ipv6 not found");
+                        return;
+                    }
                     Some(ipv6) => ipv6,
                 };
-                match reporter.report(ipv6).await {
-                    Ok(_) => info!("Report complete: {}", ipv6),
+                match reporter.report(ipv6.address).await {
+                    Ok(_) => info!("Report complete: {}", ipv6.address),
                     Err(e) => error!("{:?}", e),
                 };
             }

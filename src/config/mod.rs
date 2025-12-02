@@ -7,6 +7,7 @@ pub struct AppConfig {
     pub log_level: LogLevel,
     pub debounce_time_in_ms: u64,
     pub cloudflare: CloudflareConfig,
+    pub retry_count: u64,
 }
 
 #[derive(Debug, Deserialize)]

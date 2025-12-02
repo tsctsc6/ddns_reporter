@@ -2,6 +2,7 @@ ddns_server = "Cloudflare"
 network_name = "以太网"
 log_level = "Trace"
 debounce_time_in_ms = 1500
+retry_count = 8
 
 [cloudflare]
 zone_id = ""

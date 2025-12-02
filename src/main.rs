@@ -88,16 +88,20 @@ async fn main() {
 
     let reporter = create_reporter(&app_config);
     let network_name = app_config.network_name.clone();
+    let retry_count = app_config.retry_count;
 
     let closer = {
         let reporter = Arc::clone(&reporter);
         let network_name = network_name.clone();
+        let retry_count = retry_count;
         move || {
             let reporter = Arc::clone(&reporter);
             let network_name = network_name.clone();
+            let retry_count = retry_count;
+
             async move {
                 let mut wait_time_second = 1u64;
-                loop {
+                for _ in 0..retry_count {
                     let ipv6_list = get_ipv6_addr_info(network_name.as_str());
                     let ipv6_list = match ipv6_list {
                         Ok(ipv6_list) => ipv6_list,

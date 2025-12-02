@@ -7,7 +7,6 @@ use crate::config::{AppConfig, LogLevel};
 use crate::debounce_manager::DebounceManager;
 use crate::get_ipv6_details::get_ipv6_addr_info;
 use crate::get_ipv6_details::ipv6addr_info::AddressType;
-use crate::reporters::report_error::ReportError;
 use crate::reporters::reporter::create_reporter;
 use ::config::{Config, File as ConfigFile};
 use futures::StreamExt;
@@ -131,17 +130,7 @@ async fn main() {
                         }
                         Err(e) => {
                             error!("{:?}", e);
-                            match e {
-                                ReportError::Network(_) => {
-                                    wait_time_second = wait_time_second * 2;
-                                }
-                                ReportError::Business(_) => {
-                                    break;
-                                }
-                                ReportError::Err(_) => {
-                                    break;
-                                }
-                            }
+                            wait_time_second = wait_time_second * 2;
                         }
                     };
                 }

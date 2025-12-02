@@ -1,4 +1,5 @@
-﻿use std::time::Duration;
+﻿use log::{debug, info};
+use std::time::Duration;
 use tokio::sync::mpsc;
 use tokio::time::{Instant, sleep};
 
@@ -25,6 +26,7 @@ impl DebounceManager {
                 tokio::select! {
                     _ = trigger_rx.recv() => {
                         last_trigger_time = Some(Instant::now());
+                        debug!("trigger_rx received");
                     }
                     _ = shutdown_rx.recv() => {
                         break;

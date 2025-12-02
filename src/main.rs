@@ -7,15 +7,16 @@ use crate::config::{AppConfig, LogLevel};
 use crate::debounce_manager::DebounceManager;
 use crate::get_ipv6_details::get_ipv6_addr_info;
 use crate::get_ipv6_details::ipv6addr_info::AddressType;
+use crate::reporters::report_error::ReportError;
 use crate::reporters::reporter::create_reporter;
 use ::config::{Config, File as ConfigFile};
-use futures::StreamExt;
-use if_watch::IfEvent;
-use if_watch::smol::IfWatcher;
-use log::{error, info};
-use std::net::IpAddr;
+use futures::future::Lazy;
+use log::{debug, error, info};
 use std::sync::Arc;
+use std::sync::OnceLock;
 use std::time::Duration;
+use tokio::runtime::{Builder, Handle, Runtime};
+use tokio::task::block_in_place;
 use tokio::time::sleep;
 use tracing_appender::{
     non_blocking,
@@ -143,30 +144,25 @@ async fn main() {
         Duration::from_millis(app_config.debounce_time_in_ms),
     );
 
-    let mut set = match IfWatcher::new() {
-        Ok(set) => set,
+    let register_handler_result = netwatcher::watch_interfaces(move |update| {
+        debug!("Interfaces added: {:?}", update.diff.added);
+        debug!("Interfaces removed: {:?}", update.diff.removed);
+        for (ifindex, if_diff) in update.diff.modified {
+            debug!("Interface index {} has changed", ifindex);
+            debug!("Added IPs: {:?}", if_diff.addrs_added);
+            debug!("Removed IPs: {:?}", if_diff.addrs_removed);
+        }
+        debouncer.blocking_trigger();
+    });
+    let _register_handler = match register_handler_result {
+        Ok(h) => h,
         Err(e) => {
             error!("{:?}", e);
             return;
         }
     };
+
     loop {
-        let event = set.select_next_some().await;
-        let event = match event {
-            Ok(event) => event,
-            Err(_) => continue,
-        };
-        let event2 = match event {
-            IfEvent::Up(event) => event,
-            IfEvent::Down(event) => event,
-        };
-        match event2.network() {
-            IpAddr::V6(_) => {}
-            _ => {
-                continue;
-            }
-        }
-        debouncer.trigger().await;
-        info!("{:?}", event);
+        sleep(Duration::MAX).await;
     }
 }

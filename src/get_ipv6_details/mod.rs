@@ -1,5 +1,5 @@
 ﻿mod error;
-mod ipv6addr_info;
+pub mod ipv6addr_info;
 
 #[cfg(target_os = "windows")]
 mod windows;

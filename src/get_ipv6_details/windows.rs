@@ -73,6 +73,7 @@ pub fn get_ipv6_addr_info(specified_network_name: &str) -> Result<Vec<Ipv6AddrIn
     }
 }
 
+#[cfg(target_os = "windows")]
 fn handle_adapters(
     adapter_addresses: *mut IP_ADAPTER_ADDRESSES_LH,
     specified_network_name: &str,
@@ -96,6 +97,7 @@ fn handle_adapters(
     }
 }
 
+#[cfg(target_os = "windows")]
 fn handle_adapter(
     current_adapter: *mut IP_ADAPTER_ADDRESSES_LH,
     result: &mut Vec<Ipv6AddrInfo>,
@@ -118,6 +120,7 @@ fn handle_adapter(
     }
 }
 
+#[cfg(target_os = "windows")]
 fn handle_address(
     unicast_address: *mut IP_ADAPTER_UNICAST_ADDRESS_LH,
     adapter_network_name: &str,

@@ -68,6 +68,7 @@ async fn get_ipv6_addr_info2(specified_network_name: &str) -> Result<Vec<Ipv6Add
     Ok(result)
 }
 
+#[cfg(target_os = "linux")]
 fn handle_address(msg: &AddressMessage, adapter_network_name: &str) -> Result<Ipv6AddrInfo, Error> {
     let ip_addr = msg.attributes.iter().find_map(|attr| {
         return if let AddressAttribute::Address(ip_addr) = attr {

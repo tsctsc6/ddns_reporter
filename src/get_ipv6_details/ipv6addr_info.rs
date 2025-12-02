@@ -10,7 +10,7 @@ pub struct Ipv6AddrInfo {
     pub address_type: AddressType,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AddressType {
     Loopback,
     LinkLocal,

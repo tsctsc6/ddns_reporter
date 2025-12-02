@@ -101,7 +101,8 @@ async fn main() {
 
             async move {
                 let mut wait_time_second = 1u64;
-                for _ in 0..retry_count {
+                for current_retry_count in 0..retry_count {
+                    info!("Retry: {}", current_retry_count);
                     let ipv6_list = get_ipv6_addr_info(network_name.as_str());
                     let ipv6_list = match ipv6_list {
                         Ok(ipv6_list) => ipv6_list,

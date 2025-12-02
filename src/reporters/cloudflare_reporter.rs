@@ -40,15 +40,15 @@ impl Reporter for CloudflareReporter {
             .send()
             .await?;
         // 构建 JSON 数据
-        let payload = response.text().await?;
-        let mut payload = serde_json::from_str::<Value>(&payload)?;
+        let payload_string = response.text().await?;
+        let mut payload = serde_json::from_str::<Value>(&payload_string)?;
         let payload = &mut payload["result"];
         let payload = match payload.as_object_mut() {
             Some(x) => x,
             None => {
-                return Err(ReportError::Business(SimpleError::from(
-                    "Failed to parse response".to_string(),
-                )));
+                return Err(ReportError::Business(SimpleError::from(format!(
+                    "Failed to parse response:\r\n{payload_string}"
+                ))));
             }
         };
         match payload.remove("created_on") {

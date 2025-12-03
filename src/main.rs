@@ -86,15 +86,18 @@ async fn main() {
     let reporter = create_reporter(&app_config);
     let network_name = app_config.network_name.clone();
     let retry_count = app_config.retry_count;
+    let retry_interval_in_second = app_config.retry_interval_in_second;
 
     let closer = {
         let reporter = Arc::clone(&reporter);
         let network_name = network_name.clone();
         let retry_count = retry_count;
+        let retry_interval_in_second = retry_interval_in_second;
         move || {
             let reporter = Arc::clone(&reporter);
             let network_name = network_name.clone();
             let retry_count = retry_count;
+            let retry_interval_in_second = retry_interval_in_second;
 
             async move {
                 let mut wait_time_second = 1u64;
@@ -129,6 +132,9 @@ async fn main() {
                         Err(e) => {
                             error!("{:?}", e);
                             wait_time_second = wait_time_second * 2;
+                            if wait_time_second >= retry_interval_in_second {
+                                wait_time_second = retry_interval_in_second;
+                            }
                         }
                     };
                 }

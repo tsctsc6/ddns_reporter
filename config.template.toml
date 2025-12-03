@@ -3,6 +3,7 @@ network_name = "以太网"
 log_level = "Trace"
 debounce_time_in_ms = 2000
 retry_count = 10
+retry_interval_in_second = 60
 
 [cloudflare]
 zone_id = ""

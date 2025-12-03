@@ -8,6 +8,7 @@ pub struct AppConfig {
     pub debounce_time_in_ms: u64,
     pub cloudflare: CloudflareConfig,
     pub retry_count: u64,
+    pub retry_interval_in_second: u64,
 }
 
 #[derive(Debug, Deserialize)]

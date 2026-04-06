@@ -1,3 +1,4 @@
+mod command;
 mod config;
 mod debounce_manager;
 mod get_ipv6_details;
@@ -11,6 +12,7 @@ use crate::get_ipv6_details::ipv6addr_info::AddressType;
 use crate::logger::init_logger;
 use crate::reporters::reporter::create_reporter;
 use ::config::{Config, File as ConfigFile};
+use clap::Parser;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::runtime::Handle;
@@ -20,6 +22,7 @@ use tracing::{debug, error, info};
 
 #[tokio::main]
 async fn main() -> Result<(), i32> {
+    let cli = command::Cli::parse();
     let builder = Config::builder().add_source(ConfigFile::with_name("config.toml"));
     let config = builder.build();
     let config = match config {
@@ -37,7 +40,7 @@ async fn main() -> Result<(), i32> {
         }
     };
 
-    match init_logger(3) {
+    match init_logger(cli.verbose) {
         Ok(_) => {}
         Err(e) => {
             error!("{:?}", e);

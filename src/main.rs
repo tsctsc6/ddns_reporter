@@ -5,13 +5,11 @@ mod get_ipv6_details;
 mod logger;
 mod reporters;
 
-use crate::config::AppConfig;
-use crate::debounce_manager::DebounceManager;
 use crate::get_ipv6_details::get_ipv6_addr_info;
 use crate::get_ipv6_details::ipv6addr_info::AddressType;
 use crate::logger::init_logger;
 use crate::reporters::reporter::create_reporter;
-use ::config::{Config, File as ConfigFile};
+use crate::{config::init_config, debounce_manager::DebounceManager};
 use clap::Parser;
 use std::sync::Arc;
 use std::time::Duration;
@@ -23,45 +21,32 @@ use tracing::{debug, error, info};
 #[tokio::main]
 async fn main() -> Result<(), i32> {
     let cli = command::Cli::parse();
-    let builder = Config::builder().add_source(ConfigFile::with_name("config.toml"));
-    let config = builder.build();
-    let config = match config {
-        Ok(c) => c,
-        Err(e) => {
-            error!("{:?}", e);
-            return Err(1);
-        }
-    };
-    let app_config: AppConfig = match config.try_deserialize::<AppConfig>() {
-        Ok(config) => config,
-        Err(e) => {
-            error!("{:?}", e);
-            return Err(1);
-        }
-    };
 
-    match init_logger(cli.verbose) {
-        Ok(_) => {}
-        Err(e) => {
-            error!("{:?}", e);
-            return Err(1);
-        }
-    }
+    init_config().map_err(|e| {
+        error!("{:?}", e);
+        1
+    })?;
+
+    init_logger(cli.verbose).map_err(|e| {
+        error!("{:?}", e);
+        1
+    })?;
 
     info!("App started");
 
-    let reporter = create_reporter(&app_config);
-    let network_name = app_config.network_name.clone();
-    let retry_count = app_config.retry_count;
-    let retry_interval_in_second = app_config.retry_interval_in_second;
+    let reporters = create_reporter(config::get_config());
+    let reporters = Arc::new(reporters);
+    let network_name = config::get_config().network_name.clone();
+    let retry_count = config::get_config().retry_count;
+    let retry_interval_in_second = config::get_config().retry_interval_in_second;
 
     let closer = {
-        let reporter = Arc::clone(&reporter);
+        let reporters = Arc::clone(&reporters);
         let network_name = network_name.clone();
         let retry_count = retry_count;
         let retry_interval_in_second = retry_interval_in_second;
         move || {
-            let reporter = Arc::clone(&reporter);
+            let reporters = Arc::clone(&reporters);
             let network_name = network_name.clone();
             let retry_count = retry_count;
             let retry_interval_in_second = retry_interval_in_second;
@@ -91,19 +76,21 @@ async fn main() -> Result<(), i32> {
                         Some(ipv6) => ipv6,
                     };
                     sleep(Duration::from_secs(wait_time_second)).await;
-                    match reporter.report(ipv6.address).await {
-                        Ok(_) => {
-                            info!("Report complete: {}", ipv6.address);
-                            break;
-                        }
-                        Err(e) => {
-                            error!("{:?}", e);
-                            wait_time_second = wait_time_second * 2;
-                            if wait_time_second >= retry_interval_in_second {
-                                wait_time_second = retry_interval_in_second;
+                    for reporter in reporters.iter() {
+                        match reporter.report(ipv6.address).await {
+                            Ok(_) => {
+                                info!("Report complete: {}", ipv6.address);
+                                break;
                             }
-                        }
-                    };
+                            Err(e) => {
+                                error!("{:?}", e);
+                                wait_time_second = wait_time_second * 2;
+                                if wait_time_second >= retry_interval_in_second {
+                                    wait_time_second = retry_interval_in_second;
+                                }
+                            }
+                        };
+                    }
                 }
             }
         }
@@ -111,7 +98,7 @@ async fn main() -> Result<(), i32> {
 
     let debouncer = Arc::new(DebounceManager::new(
         closer,
-        Duration::from_millis(app_config.debounce_time_in_ms),
+        Duration::from_millis(config::get_config().debounce_time_in_ms),
     ));
     let debouncer_arc = Arc::clone(&debouncer);
     let rt_handle = Handle::current().clone();

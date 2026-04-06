@@ -1,5 +1,4 @@
-use crate::reporters::report_error::{ReportError, SimpleError};
-use crate::reporters::reporter::Reporter;
+use crate::reporters::{Error, Reporter};
 use async_trait::async_trait;
 use reqwest::Client;
 use serde_json::Value;
@@ -26,7 +25,7 @@ impl CloudflareReporter {
 
 #[async_trait]
 impl Reporter for CloudflareReporter {
-    async fn report(&self, ipv6addr: Ipv6Addr) -> Result<(), ReportError> {
+    async fn report(&self, ipv6addr: Ipv6Addr) -> Result<(), Error> {
         let response = self
             .client
             .get(format!(
@@ -46,32 +45,32 @@ impl Reporter for CloudflareReporter {
         let payload = match payload.as_object_mut() {
             Some(x) => x,
             None => {
-                return Err(ReportError::Business(SimpleError::from(format!(
+                return Err(Error::JsonTypeError(format!(
                     "Failed to parse response:\r\n{payload_string}"
-                ))));
+                )));
             }
         };
         match payload.remove("created_on") {
             Some(x) => x,
             None => {
-                return Err(ReportError::Business(SimpleError::from(
-                    "Failed to remove created_on from response".to_string(),
+                return Err(Error::JsonOperateError(format!(
+                    "Failed to remove created_on from response",
                 )));
             }
         };
         match payload.remove("modified_on") {
             Some(x) => x,
             None => {
-                return Err(ReportError::Business(SimpleError::from(
-                    "Failed to remove modified_on from response".to_string(),
+                return Err(Error::JsonOperateError(format!(
+                    "Failed to remove modified_on from response",
                 )));
             }
         };
         let ip_value = match payload.get_mut("content") {
             Some(x) => x,
             None => {
-                return Err(ReportError::Business(SimpleError::from(
-                    "Failed to get content from response".to_string(),
+                return Err(Error::JsonOperateError(format!(
+                    "Failed to get content from response",
                 )));
             }
         };
@@ -92,9 +91,7 @@ impl Reporter for CloudflareReporter {
             .send()
             .await?;
         if !response.status().is_success() {
-            return Err(ReportError::Business(SimpleError::from(
-                response.text().await?,
-            )));
+            return Err(Error::HttpResponseError(response.text().await?));
         }
         debug!("response: {:#?}", response.text().await?);
         Ok(())

@@ -1,10 +1,10 @@
 use crate::reporters::report_error::{ReportError, SimpleError};
 use crate::reporters::reporter::Reporter;
 use async_trait::async_trait;
-use log::debug;
 use reqwest::Client;
 use serde_json::Value;
 use std::net::Ipv6Addr;
+use tracing::debug;
 
 pub struct CloudflareReporter {
     client: Client,

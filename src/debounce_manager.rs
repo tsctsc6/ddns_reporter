@@ -1,7 +1,7 @@
-﻿use log::debug;
-use std::time::Duration;
+﻿use std::time::Duration;
 use tokio::sync::mpsc;
 use tokio::time::{Instant, sleep};
+use tracing::debug;
 
 pub(crate) struct DebounceManager {
     trigger_tx: mpsc::Sender<()>,

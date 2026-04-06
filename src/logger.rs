@@ -23,7 +23,6 @@ pub enum Error {
 }
 
 /// Initializes the logger with both console and file outputs, using a rolling file appender.
-/// WorkerGuard must keep alive in main thread to ensure logs are flushed properly.
 pub fn init_logger(verbose: u8) -> Result<(), Error> {
     let file_appender = RollingFileAppender::builder()
         .rotation(Rotation::DAILY)

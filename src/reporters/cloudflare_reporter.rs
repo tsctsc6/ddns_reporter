@@ -38,7 +38,7 @@ impl Reporter for CloudflareReporter {
             )
             .send()
             .await?;
-        // 构建 JSON 数据
+        // Build JSON data
         let payload_string = response.text().await?;
         let mut payload = serde_json::from_str::<Value>(&payload_string)?;
         let payload = &mut payload["result"];

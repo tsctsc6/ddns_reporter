@@ -28,7 +28,7 @@ pub fn get_ipv6_addr_info(specified_network_name: &str) -> Result<Vec<Ipv6AddrIn
 #[cfg(target_os = "linux")]
 async fn get_ipv6_addr_info2(specified_network_name: &str) -> Result<Vec<Ipv6AddrInfo>, Error> {
     let mut result: Vec<Ipv6AddrInfo> = vec![];
-    // 创建 Netlink 连接和句柄
+    // Create Netlink connection and handle
     let (connection, handle, _) = new_connection().map_err(|e| format!("{:?}", e)).unwrap();
     tokio::spawn(connection);
 
@@ -52,7 +52,7 @@ async fn get_ipv6_addr_info2(specified_network_name: &str) -> Result<Vec<Ipv6Add
         return Ok(vec![]);
     }
 
-    // 获取所有 IPv6 地址（相当于 `ip -6 addr show`）
+    // Get all IPv6 addresses (equivalent to `ip -6 addr show`)
     let mut address_messages = handle.address().get().execute();
 
     while let Some(msg) = address_messages.try_next().await? {

@@ -39,7 +39,7 @@ impl DebounceManager {
                                 last_trigger_time = None;
                             }
                             None => {
-                                // 如果没有触发事件，等待更长时间
+                                // if there is no trigger, just wait long time
                                 sleep(Duration::MAX).await;
                             }
                         }
@@ -55,13 +55,13 @@ impl DebounceManager {
         }
     }
 
-    // 触发发送事件
+    /// Trigger send event
     pub async fn trigger(&self) {
         let _ = self.trigger_tx.send(()).await;
     }
 
     #[allow(dead_code)]
-    // 关闭后台任务
+    /// Shut down the background task
     pub async fn shutdown(self) {
         let _ = self.shutdown_tx.send(()).await;
         self.task_handle.await.ok();

@@ -3,9 +3,10 @@ use std::{sync::OnceLock, time::Duration};
 use crate::application::report_all;
 use crate::reporters::create_reporter;
 use netwatcher::WatchHandle;
-use rxrust::prelude::*;
 use rxrust::{
-    prelude::{Observable, Observer},
+    observable,
+    prelude::{Observable, Observer, SubscribeNext},
+    shared::SharedObservable,
     subject::SharedSubject,
 };
 use std::sync::{Arc, Mutex};

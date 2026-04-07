@@ -18,17 +18,17 @@ use tracing::{error, info};
 async fn main() -> Result<(), i32> {
     let cli = command::Cli::parse();
 
-    if let Err(e) = init_config() {
-        error!("{:?}", e);
-        return Err(1);
-    }
-
     if let Err(e) = init_logger(cli.verbose) {
-        error!("{:?}", e);
+        eprintln!("{:?}", e);
         return Err(1);
     }
 
     info!("App started");
+
+    if let Err(e) = init_config() {
+        error!("{:?}", e);
+        return Err(1);
+    }
 
     if let Err(e) = netwatcher::init_netwatcher() {
         error!("{:?}", e);

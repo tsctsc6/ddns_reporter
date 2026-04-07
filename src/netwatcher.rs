@@ -1,18 +1,23 @@
 use std::{sync::OnceLock, time::Duration};
 
 use crate::application::report_all;
-use crate::debounce_manager::DebounceManager;
 use crate::reporters::create_reporter;
 use netwatcher::WatchHandle;
+use rxrust::prelude::*;
+use rxrust::{
+    prelude::{Observable, Observer},
+    subject::SharedSubject,
+};
 use std::sync::{Arc, Mutex};
 use thiserror::Error;
-use tokio::runtime::Handle;
-use tokio::task::block_in_place;
+use tokio::runtime::Runtime;
 use tracing::{debug, error, info};
 
 use crate::config::get_config;
 
 static NETWATCHER_HANDLER: OnceLock<Mutex<WatchHandle>> = OnceLock::new();
+
+static TOKIO_RUNTIME: OnceLock<Arc<Runtime>> = OnceLock::new();
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -20,28 +25,40 @@ pub enum Error {
     Netwatcher(#[from] netwatcher::Error),
     #[error("Failed to initialize netwatcher")]
     NetwatcherInitializationError(),
+    #[error("Failed to initialize tokio runtime")]
+    TokioRuntimeInitializationError(),
 }
 
 pub fn init_netwatcher() -> Result<(), Error> {
     let reporters = Arc::new(create_reporter(get_config()));
+    let scheduler = Arc::new(tokio::runtime::Runtime::new().expect("Failed to create runtime"));
+    let scheduler_clone = Arc::clone(&scheduler);
+    let subject = SharedSubject::<(), ()>::new();
+    let mut observer = subject.clone();
 
-    let debouncer = Arc::new(DebounceManager::new(
-        {
-            let reporters = Arc::clone(&reporters);
-            move || {
-                let reporters = Arc::clone(&reporters);
-                async move {
-                    match report_all(reporters).await {
-                        Ok(_) => {}
-                        Err(e) => error!("{:?}", e),
-                    };
-                }
-            }
-        },
-        Duration::from_millis(get_config().debounce_time_in_ms),
-    ));
-    let debouncer_clone = Arc::clone(&debouncer);
-    let rt_handle = Handle::current().clone();
+    subject
+        .clone()
+        .debounce(
+            Duration::from_millis(get_config().debounce_time_in_ms),
+            Arc::clone(&scheduler),
+        )
+        .flat_map(move |_| {
+            observable::from_future(
+                report_all(Arc::clone(&reporters)),
+                Arc::clone(&scheduler_clone),
+            )
+        })
+        .into_shared()
+        .subscribe(move |x| {
+            match x {
+                Ok(_) => {}
+                Err(e) => error!("{:?}", e),
+            };
+        });
+
+    TOKIO_RUNTIME
+        .set(Arc::clone(&scheduler))
+        .map_err(|_| Error::TokioRuntimeInitializationError())?;
 
     let netwatcher_handler = netwatcher::watch_interfaces(move |update| {
         let network_name = get_config().network_name.clone();
@@ -66,14 +83,7 @@ pub fn init_netwatcher() -> Result<(), Error> {
         debug!("Interfaces removed: {:?}", update.diff.removed);
 
         if update.diff.added.contains(&network_index) {
-            // Check if we're currently in a Tokio runtime context
-            if Handle::try_current().is_ok() {
-                // If yes, use block_in_place to temporarily yield the async context
-                block_in_place(|| rt_handle.block_on(debouncer_clone.trigger()))
-            } else {
-                // If not, directly block_on with the cloned handle
-                rt_handle.block_on(debouncer_clone.trigger());
-            }
+            observer.next(());
             return;
         }
 
@@ -95,14 +105,7 @@ pub fn init_netwatcher() -> Result<(), Error> {
         debug!("Interface index {} has changed", network_diff.0);
         debug!("Added IPs: {:?}", network_diff.1.addrs_added);
         debug!("Removed IPs: {:?}", network_diff.1.addrs_removed);
-        // Check if we're currently in a Tokio runtime context
-        if Handle::try_current().is_ok() {
-            // If yes, use block_in_place to temporarily yield the async context
-            block_in_place(|| rt_handle.block_on(debouncer_clone.trigger()))
-        } else {
-            // If not, directly block_on with the cloned handle
-            rt_handle.block_on(debouncer_clone.trigger());
-        }
+        observer.next(());
     })?;
 
     NETWATCHER_HANDLER

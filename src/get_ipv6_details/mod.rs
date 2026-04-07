@@ -1,4 +1,4 @@
-﻿mod error;
+﻿pub mod error;
 pub mod ipv6addr_info;
 
 #[cfg(target_os = "windows")]

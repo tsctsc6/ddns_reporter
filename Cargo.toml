@@ -12,22 +12,30 @@ serde_json = "1"
 config = "0"
 serde = { version = "1", features = ["derive"] }
 async-trait = "0.1"
-log = "0"
-tracing-subscriber = "0"
-tracing-appender = "0"
 thiserror = "2"
 scopeguard = "1"
+
+clap = { version = "4.6.0", features = ["derive"] }
+
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = [
+    "env-filter",
+    "fmt",
+    "time",
+] }
+tracing-appender = "0.2.4"
+time = { version = "0.3.47", features = ["formatting", "macros"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows = { version = "0", features = [
     "Win32_Foundation",
     "Win32_NetworkManagement_IpHelper",
     "Win32_Networking_WinSock",
-    "Win32_NetworkManagement_Ndis"
+    "Win32_NetworkManagement_Ndis",
 ] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
-# rtnetlink 和 netlink-packet-route 的版本要匹配。
+# The versions of rtnetlink and netlink-packet-route must match.
 rtnetlink = "0.18.1"
 netlink-packet-route = "0.25.1"
 tokio = { version = "1", features = ["full"] }

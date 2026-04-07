@@ -2,7 +2,7 @@ use std::{sync::Arc, time::Duration};
 
 use thiserror::Error;
 use tokio::{task::JoinSet, time::sleep};
-use tracing::{error, info};
+use tracing::{debug, error, info};
 
 use crate::{
     config::get_config,
@@ -34,7 +34,7 @@ async fn report_one(reporter: Arc<dyn Reporter>) -> Result<(), Error> {
     let retry_count = get_config().retry_count;
     let retry_interval_in_second = get_config().retry_interval_in_second;
     for current_retry_count in 0..retry_count {
-        info!("Retry: {}", current_retry_count);
+        debug!("Retry: {}", current_retry_count);
         let ipv6_list = get_ipv6_addr_info(network_name.as_str()).await?;
         let ipv6 = ipv6_list
             .iter()

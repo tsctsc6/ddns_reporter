@@ -1,7 +1,6 @@
 mod application;
 mod command;
 mod config;
-mod debounce_manager;
 mod get_ipv6_details;
 mod logger;
 mod netwatcher;
@@ -11,11 +10,9 @@ use std::time::Duration;
 
 use crate::{config::init_config, logger::init_logger};
 use clap::Parser;
-use tokio::time::sleep;
 use tracing::{error, info};
 
-#[tokio::main]
-async fn main() -> Result<(), i32> {
+fn main() -> Result<(), i32> {
     let cli = command::Cli::parse();
 
     if let Err(e) = init_logger(cli.verbose) {
@@ -36,7 +33,7 @@ async fn main() -> Result<(), i32> {
     }
 
     loop {
-        sleep(Duration::MAX).await;
+        std::thread::sleep(Duration::MAX);
     }
 
     // Ok(())

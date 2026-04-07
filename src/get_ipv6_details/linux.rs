@@ -20,7 +20,7 @@ pub async fn get_ipv6_addr_info(specified_network_name: &str) -> Result<Vec<Ipv6
     let mut links: HashMap<u32, String> = HashMap::new();
     let mut link_messages = handle.link().get().execute();
     while let Some(msg) = link_messages.try_next().await? {
-        // println!("msg: {:#?}", msg);
+        // debug!("msg: {:#?}", msg);
         for attr in msg.attributes {
             if let LinkAttribute::IfName(name) = attr {
                 if !str::is_empty(specified_network_name) && name == specified_network_name {
@@ -46,7 +46,7 @@ pub async fn get_ipv6_addr_info(specified_network_name: &str) -> Result<Vec<Ipv6
         if msg.header.family != AddressFamily::Inet6 {
             continue;
         }
-        //println!("msg: {:#?}", msg);
+        // debug!("msg: {:#?}", msg);
         let link_name = links.get(&msg.header.index);
         let link_name = match link_name {
             Some(link_name) => link_name,

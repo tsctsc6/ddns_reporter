@@ -37,4 +37,4 @@ windows = { version = "0.62.2", features = [
 [target.'cfg(target_os = "linux")'.dependencies]
 # The versions of rtnetlink and netlink-packet-route must match.
 rtnetlink = "0.20.0"
-netlink-packet-route = "0.29.0"
+netlink-packet-route = "0.28.0"

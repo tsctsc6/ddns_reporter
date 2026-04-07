@@ -13,20 +13,7 @@ use tokio::runtime::Handle;
 use tokio::task::block_in_place;
 
 #[cfg(target_os = "linux")]
-pub fn get_ipv6_addr_info(specified_network_name: &str) -> Result<Vec<Ipv6AddrInfo>, Error> {
-    let rt_handle = Handle::current().clone();
-    // Check if we're currently in a Tokio runtime context
-    if Handle::try_current().is_ok() {
-        // If yes, use block_in_place to temporarily yield the async context
-        block_in_place(|| rt_handle.block_on(get_ipv6_addr_info2(specified_network_name)))
-    } else {
-        // If not, directly block_on with the cloned handle
-        rt_handle.block_on(get_ipv6_addr_info2(specified_network_name))
-    }
-}
-
-#[cfg(target_os = "linux")]
-async fn get_ipv6_addr_info2(specified_network_name: &str) -> Result<Vec<Ipv6AddrInfo>, Error> {
+async fn get_ipv6_addr_info(specified_network_name: &str) -> Result<Vec<Ipv6AddrInfo>, Error> {
     let mut result: Vec<Ipv6AddrInfo> = vec![];
     // Create Netlink connection and handle
     let (connection, handle, _) = new_connection().map_err(|e| format!("{:?}", e)).unwrap();

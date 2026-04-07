@@ -17,8 +17,9 @@ use windows::core::{HRESULT, PWSTR};
 // https://docs.rs/windows/latest/windows/
 // https://learn.microsoft.com/zh-cn/windows/win32/api/
 
+// async because linux version is async, and we want to keep the same interface for both versions
 #[cfg(target_os = "windows")]
-pub fn get_ipv6_addr_info(specified_network_name: &str) -> Result<Vec<Ipv6AddrInfo>, Error> {
+pub async fn get_ipv6_addr_info(specified_network_name: &str) -> Result<Vec<Ipv6AddrInfo>, Error> {
     unsafe {
         let mut wsa_data = WSADATA::default();
         // use Winsock v2.2

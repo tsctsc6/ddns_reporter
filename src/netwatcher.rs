@@ -4,7 +4,7 @@ use crate::application::report_all;
 use crate::debounce_manager::DebounceManager;
 use crate::reporters::create_reporter;
 use netwatcher::WatchHandle;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use thiserror::Error;
 use tokio::runtime::Handle;
 use tokio::task::block_in_place;
@@ -12,7 +12,7 @@ use tracing::{debug, error, info};
 
 use crate::config::get_config;
 
-static NETWATCHER_HANDLER: OnceLock<WatchHandle> = OnceLock::new();
+static NETWATCHER_HANDLER: OnceLock<Mutex<WatchHandle>> = OnceLock::new();
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -106,7 +106,7 @@ pub fn init_netwatcher() -> Result<(), Error> {
     })?;
 
     NETWATCHER_HANDLER
-        .set(netwatcher_handler)
+        .set(netwatcher_handler.into())
         .map_err(|_| Error::NetwatcherInitializationError())?;
 
     Ok(())

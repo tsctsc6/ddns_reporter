@@ -1,6 +1,5 @@
 ﻿use crate::get_ipv6_details::error::{Error, UniversalError};
 use crate::get_ipv6_details::ipv6addr_info::{AddressType, Ipv6AddrInfo};
-use core::clone::Clone;
 use futures::TryStreamExt;
 use netlink_packet_route::AddressFamily;
 use netlink_packet_route::address::{AddressAttribute, AddressFlags, AddressMessage};
@@ -9,24 +8,9 @@ use rtnetlink::new_connection;
 use std::collections::HashMap;
 use std::net::IpAddr;
 use std::time::Duration;
-use tokio::runtime::Handle;
-use tokio::task::block_in_place;
 
 #[cfg(target_os = "linux")]
-pub fn get_ipv6_addr_info(specified_network_name: &str) -> Result<Vec<Ipv6AddrInfo>, Error> {
-    let rt_handle = Handle::current().clone();
-    // Check if we're currently in a Tokio runtime context
-    if Handle::try_current().is_ok() {
-        // If yes, use block_in_place to temporarily yield the async context
-        block_in_place(|| rt_handle.block_on(get_ipv6_addr_info2(specified_network_name)))
-    } else {
-        // If not, directly block_on with the cloned handle
-        rt_handle.block_on(get_ipv6_addr_info2(specified_network_name))
-    }
-}
-
-#[cfg(target_os = "linux")]
-async fn get_ipv6_addr_info2(specified_network_name: &str) -> Result<Vec<Ipv6AddrInfo>, Error> {
+pub async fn get_ipv6_addr_info(specified_network_name: &str) -> Result<Vec<Ipv6AddrInfo>, Error> {
     let mut result: Vec<Ipv6AddrInfo> = vec![];
     // Create Netlink connection and handle
     let (connection, handle, _) = new_connection().map_err(|e| format!("{:?}", e)).unwrap();

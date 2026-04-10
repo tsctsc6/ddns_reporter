@@ -1,7 +1,7 @@
 [workspace]
 default-members = ["crates/ddns_reporter"]
 resolver = "2"
-members = ["crates/*"]
+members = ["crates/*", "xtask"]
 
 [workspace.package]
 version = "0.1.0"

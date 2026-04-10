@@ -1,0 +1,91 @@
+name: Publish
+
+on:
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: pwsh
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Setup rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Install target toolchain
+      run: |
+        rustup target add x86_64-unknown-linux-gnu
+
+    - name: Get release version
+      id: get_version
+      run: |
+        $v = cargo x meta -f version
+        "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+    - name: Create release
+      env:
+        GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+      run: >
+        gh release create v${{ steps.get_version.outputs.version }}
+        --repo ${{ github.event.repository.full_name }}
+        --title v${{ steps.get_version.outputs.version }}
+        --generate-notes
+
+  build:
+    needs:
+      - release
+    strategy:
+      matrix:
+        include:
+          - rid: win-x86_64
+            host_os: windows-latest
+            toolchain: x86_64-pc-windows-msvc
+          - rid: linux-x86_64
+            host_os: ubuntu-22.04
+            toolchain: x86_64-unknown-linux-gnu
+          - rid: win-aarch64
+            host_os: windows-11-arm
+            toolchain: aarch64-pc-windows-msvc
+          - rid: linux-aarch64
+            host_os: ubuntu-22.04-arm
+            toolchain: aarch64-unknown-linux-gnu
+    runs-on: ${{ matrix.host_os }}
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Setup rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Install target toolchain
+      run: |
+        rustup target add ${{ matrix.toolchain }}
+      
+    - name: Build
+      run: |
+        cargo x publish
+
+    - name: Get metadata
+      id: get_metadata
+      run: |
+        $version = cargo x meta -f version
+        "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+        $assetsName = cargo x meta -f assets-name
+        "assetsName=$assetsName" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+    
+    - name: Upload release asset
+      env:
+        GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+      run: >
+        gh release upload v${{ steps.get_metadata.outputs.version }}
+        ./dist/${{ steps.get_metadata.outputs.assetsName }}.zip
+        --repo ${{ github.event.repository.full_name }}

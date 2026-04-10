@@ -1,8 +1,9 @@
 use std::{sync::OnceLock, time::Duration};
 
-use crate::application::report_all;
 use crate::reporters::create_reporter;
+use crate::{application::report_all, config::AppConfig};
 use netwatcher::WatchHandle;
+use reqwest::Client;
 use rxrust::{
     observable,
     prelude::{Observable, Observer, SubscribeNext},
@@ -30,8 +31,8 @@ pub enum Error {
     TokioRuntimeInitializationError(),
 }
 
-pub fn init_netwatcher() -> Result<(), Error> {
-    let reporters = Arc::new(create_reporter(get_config()));
+pub fn init_netwatcher(config: &AppConfig, client: &Client) -> Result<(), Error> {
+    let reporters = Arc::new(create_reporter(config, client));
     let scheduler = Arc::new(tokio::runtime::Runtime::new().expect("Failed to create runtime"));
     let scheduler_clone = Arc::clone(&scheduler);
     let subject = SharedSubject::<(), ()>::new();

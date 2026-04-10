@@ -3,6 +3,7 @@ pub mod cloudflare_reporter;
 use crate::config::{AppConfig, DdnsServer};
 use crate::reporters::cloudflare_reporter::CloudflareReporter;
 use async_trait::async_trait;
+use reqwest::Client;
 use std::net::Ipv6Addr;
 use std::sync::Arc;
 
@@ -27,7 +28,7 @@ pub trait Reporter: Send + Sync {
     async fn report(&self, ipv6addr: Ipv6Addr) -> Result<(), Error>;
 }
 
-pub fn create_reporter(app_config: &AppConfig) -> Vec<Arc<dyn Reporter>> {
+pub fn create_reporter(app_config: &AppConfig, client: &Client) -> Vec<Arc<dyn Reporter>> {
     let mut reporters: Vec<Arc<dyn Reporter>> = Vec::new();
     for server in &app_config.ddns_servers {
         let reporter: Arc<dyn Reporter> = match server {
@@ -35,6 +36,7 @@ pub fn create_reporter(app_config: &AppConfig) -> Vec<Arc<dyn Reporter>> {
                 &app_config.cloudflare.zone_id,
                 &app_config.cloudflare.dns_record_id,
                 &app_config.cloudflare.token,
+                client,
             )),
         };
         reporters.push(reporter);

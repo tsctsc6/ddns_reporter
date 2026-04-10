@@ -13,9 +13,14 @@ pub struct CloudflareReporter {
 }
 
 impl CloudflareReporter {
-    pub fn new(zone_id: &str, dns_record_id: &str, token: &str) -> CloudflareReporter {
+    pub fn new(
+        zone_id: &str,
+        dns_record_id: &str,
+        token: &str,
+        client: &Client,
+    ) -> CloudflareReporter {
         CloudflareReporter {
-            client: Client::new(),
+            client: client.clone(),
             zone_id: String::from(zone_id),
             dns_record_id: String::from(dns_record_id),
             token: String::from(token),

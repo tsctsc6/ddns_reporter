@@ -61,7 +61,7 @@ pub fn is_send_event(update: &netwatcher::Update, config: &AppConfig) -> bool {
             return false;
         }
         Some(i) => {
-            info!("Interface {} found: {}", network_name, i);
+            info!("Interface {} found, index: {}", network_name, i);
             i
         }
     };

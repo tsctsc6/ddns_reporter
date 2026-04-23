@@ -5,7 +5,7 @@ use tokio::{task::JoinSet, time::sleep};
 use tracing::{debug, error, info};
 
 use crate::{
-    config::get_config,
+    config::AppConfig,
     get_ipv6_details::{get_ipv6_addr_info, ipv6addr_info::AddressType},
     reporters::Reporter,
 };
@@ -18,21 +18,25 @@ pub enum Error {
     MaxPreferredLifetimeIpv6NotFound(),
 }
 
-pub async fn report_all(reporters: Arc<Vec<Arc<dyn Reporter>>>) -> Result<(), Error> {
+pub async fn report_all(
+    reporters: Arc<Vec<Arc<dyn Reporter>>>,
+    config: Arc<AppConfig>,
+) -> Result<(), Error> {
     let mut set = JoinSet::new();
     for reporter in reporters.iter() {
+        let config_clone = Arc::clone(&config);
         let reporter = Arc::clone(reporter);
-        set.spawn(async move { report_one(reporter).await });
+        set.spawn(async move { report_one(reporter, &config_clone).await });
     }
     set.join_all().await;
     Ok(())
 }
 
-async fn report_one(reporter: Arc<dyn Reporter>) -> Result<(), Error> {
+async fn report_one(reporter: Arc<dyn Reporter>, config: &AppConfig) -> Result<(), Error> {
     let mut wait_time_second = 1u64;
-    let network_name = get_config().network_name.clone();
-    let retry_count = get_config().retry_count;
-    let retry_interval_in_second = get_config().retry_interval_in_second;
+    let network_name = config.network_name.clone();
+    let retry_count = config.retry_count;
+    let retry_interval_in_second = config.retry_interval_in_second;
     for current_retry_count in 0..retry_count {
         debug!("Retry: {}", current_retry_count);
         let ipv6_list = get_ipv6_addr_info(network_name.as_str()).await?;

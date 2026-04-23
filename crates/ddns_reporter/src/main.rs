@@ -7,7 +7,7 @@ mod logger;
 mod netwatcher_filter;
 mod reporters;
 
-use std::process::ExitCode;
+use std::{process::ExitCode, sync::Arc};
 
 use crate::{
     client::init_client,
@@ -30,7 +30,7 @@ fn main() -> ExitCode {
     info!("App started");
 
     let config = match init_config() {
-        Ok(config) => config,
+        Ok(config) => Arc::new(config),
         Err(e) => {
             error!("{:?}", e);
             return ExitCode::FAILURE;
@@ -46,7 +46,7 @@ fn main() -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
-    let mut observer = init_observer(&config, &client);
+    let mut observer = init_observer(Arc::clone(&config), &client);
 
     loop {
         let update = watch.changed();

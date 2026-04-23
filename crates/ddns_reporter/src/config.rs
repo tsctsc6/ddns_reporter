@@ -1,6 +1,4 @@
-﻿use std::sync::OnceLock;
-
-use config::{Config, ConfigError, File as ConfigFile};
+﻿use config::{Config, ConfigError, File as ConfigFile};
 use serde::Deserialize;
 use thiserror::Error;
 
@@ -26,26 +24,15 @@ pub struct CloudflareConfig {
     pub token: String,
 }
 
-static GLOBAL_CONFIG: OnceLock<AppConfig> = OnceLock::new();
-
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("Config error:\n{0}")]
     ConfigError(#[from] ConfigError),
 }
 
-pub fn init_config() -> Result<(), Error> {
+pub fn init_config() -> Result<AppConfig, Error> {
     let builder = Config::builder().add_source(ConfigFile::with_name("config.toml"));
     let config = builder.build()?;
     let app_config: AppConfig = config.try_deserialize::<AppConfig>()?;
-    GLOBAL_CONFIG.set(app_config).map_err(|_| {
-        Error::ConfigError(ConfigError::Message("Failed to set global config".into()))
-    })?;
-    Ok(())
-}
-
-pub fn get_config() -> &'static AppConfig {
-    GLOBAL_CONFIG
-        .get()
-        .expect("AppConfig is not initialized. Please call init_config first.")
+    Ok(app_config)
 }

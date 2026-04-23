@@ -4,17 +4,19 @@ mod command;
 mod config;
 mod get_ipv6_details;
 mod logger;
-mod netwatcher;
+mod netwatcher_filter;
 mod reporters;
 
-use std::{process::ExitCode, time::Duration};
+use std::process::ExitCode;
 
 use crate::{
-    client::{get_client, init_client},
-    config::{get_config, init_config},
+    client::init_client,
+    config::init_config,
     logger::init_logger,
+    netwatcher_filter::{init_observer, is_send_event},
 };
 use clap::Parser;
+use rxrust::prelude::Observer;
 use tracing::{error, info};
 
 fn main() -> ExitCode {
@@ -27,23 +29,30 @@ fn main() -> ExitCode {
 
     info!("App started");
 
-    if let Err(e) = init_config() {
-        error!("{:?}", e);
-        return ExitCode::FAILURE;
-    }
+    let config = match init_config() {
+        Ok(config) => config,
+        Err(e) => {
+            error!("{:?}", e);
+            return ExitCode::FAILURE;
+        }
+    };
 
-    if let Err(e) = init_client() {
-        error!("{:?}", e);
-        return ExitCode::FAILURE;
-    }
+    let client = init_client();
 
-    if let Err(e) = netwatcher::init_netwatcher(get_config(), get_client()) {
-        error!("{:?}", e);
-        return ExitCode::FAILURE;
-    }
+    let mut watch = match netwatcher::watch_interfaces_blocking() {
+        Ok(watch) => watch,
+        Err(e) => {
+            error!("{:?}", e);
+            return ExitCode::FAILURE;
+        }
+    };
+    let mut observer = init_observer(&config, &client);
 
     loop {
-        std::thread::sleep(Duration::MAX);
+        let update = watch.changed();
+        if is_send_event(&update, &config) {
+            observer.next(());
+        }
     }
 
     // ExitCode::SUCCESS;

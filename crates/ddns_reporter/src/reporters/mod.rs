@@ -25,6 +25,7 @@ pub enum Error {
 
 #[async_trait]
 pub trait Reporter: Send + Sync {
+    fn get_name(&self) -> &str;
     async fn report(&self, ipv6addr: Ipv6Addr) -> Result<(), Error>;
 }
 

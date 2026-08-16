@@ -30,6 +30,10 @@ impl CloudflareReporter {
 
 #[async_trait]
 impl Reporter for CloudflareReporter {
+    fn get_name(&self) -> &str {
+        "Cloudflare Reporter"
+    }
+
     async fn report(&self, ipv6addr: Ipv6Addr) -> Result<(), Error> {
         let response = self
             .client

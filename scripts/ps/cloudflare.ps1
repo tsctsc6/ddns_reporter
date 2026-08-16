@@ -4,7 +4,7 @@ $uri = "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$DNS_REC
 
 $ip = (Get-NetIPAddress -AddressFamily IPv6 -InterfaceAlias "以太网" -PrefixOrigin RouterAdvertisement -SuffixOrigin Random).IPAddress
 
-$token = ConvertTo-SecureString "xx" -AsPlainText -Force
+curl
 
 $params = @{
     Uri            = $uri

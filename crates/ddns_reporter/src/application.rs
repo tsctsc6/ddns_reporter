@@ -2,7 +2,7 @@ use std::{sync::Arc, time::Duration};
 
 use thiserror::Error;
 use tokio::{task::JoinSet, time::sleep};
-use tracing::{debug, error, info};
+use tracing::{debug, error, info, warn};
 
 use crate::{
     config::AppConfig,
@@ -14,8 +14,8 @@ use crate::{
 pub enum Error {
     #[error("Get IPv6 address info error:\n{0}")]
     GetIpv6AddrInfoError(#[from] crate::get_ipv6_details::error::Error),
-    #[error("Max preferred lifetime IPv6 not found")]
-    MaxPreferredLifetimeIpv6NotFound(),
+    #[error("Temporary IP address not found")]
+    TemporaryIPAddressNotFound(),
 }
 
 pub async fn report_all(
@@ -32,39 +32,57 @@ pub async fn report_all(
     Ok(())
 }
 
-async fn report_one(reporter: Arc<dyn Reporter>, config: &AppConfig) -> Result<(), Error> {
+async fn report_one(reporter: Arc<dyn Reporter>, config: &AppConfig) -> () {
     let mut wait_time_second = 1u64;
-    let network_name = config.network_name.clone();
     let retry_count = config.retry_count;
     let retry_interval_in_second = config.retry_interval_in_second;
     for current_retry_count in 0..retry_count {
-        debug!("Retry: {}", current_retry_count);
-        let ipv6_list = get_ipv6_addr_info(network_name.as_str()).await?;
-        let ipv6 = ipv6_list
-            .iter()
-            .filter(|x| -> bool { x.network_name == network_name })
-            .filter(|x| -> bool { x.address_type == AddressType::Temporary })
-            .max_by_key(|x| -> Duration { x.preferred_lifetime });
-        let ipv6 = match ipv6 {
-            None => {
-                return Err(Error::MaxPreferredLifetimeIpv6NotFound());
+        debug!("[{}] Retry: {}", reporter.get_name(), current_retry_count);
+        // Every retry try to get ip address, because since the report failed, the network may unstable, and the ip address may change.
+        let ipv6 = match get_ipv6_address(config).await {
+            Ok(ipv6) => ipv6,
+            Err(e) => {
+                warn!("{:?}", e);
+                continue;
             }
-            Some(ipv6) => ipv6,
         };
-        sleep(Duration::from_secs(wait_time_second)).await;
         match reporter.report(ipv6.address).await {
             Ok(_) => {
-                info!("Report complete: {}", ipv6.address);
-                break;
+                info!(
+                    "[{}] Report complete: {}",
+                    reporter.get_name(),
+                    ipv6.address
+                );
+                return;
             }
             Err(e) => {
-                error!("{:?}", e);
+                warn!("{:?}", e);
                 wait_time_second = wait_time_second * 2;
                 if wait_time_second >= retry_interval_in_second {
                     wait_time_second = retry_interval_in_second;
                 }
             }
         };
+        sleep(Duration::from_secs(wait_time_second)).await;
     }
-    Ok(())
+    error!("[{}] Failed to report", reporter.get_name(),);
+}
+
+async fn get_ipv6_address(
+    config: &AppConfig,
+) -> Result<crate::get_ipv6_details::ipv6addr_info::Ipv6AddrInfo, Error> {
+    let network_name = config.network_name.clone();
+    let ipv6_list = get_ipv6_addr_info(network_name.as_str()).await?;
+    debug!("IP lists found: {:#?}", ipv6_list);
+    let ipv6 = ipv6_list
+        .iter()
+        .filter(|x| -> bool { x.network_name == network_name })
+        .filter(|x| -> bool { x.address_type == AddressType::Temporary })
+        .max_by_key(|x| -> Duration { x.preferred_lifetime });
+    debug!("IP found: {:#?}", ipv6);
+    let ipv6 = match ipv6 {
+        Some(ipv6) => ipv6.clone(),
+        None => return Err(Error::TemporaryIPAddressNotFound()),
+    };
+    Ok(ipv6)
 }

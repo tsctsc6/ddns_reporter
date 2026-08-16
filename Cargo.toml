@@ -8,18 +8,18 @@ version = "0.2.1"
 edition = "2024"
 
 [workspace.dependencies]
-tokio = { version = "1.52.3", features = ["rt", "rt-multi-thread", "macros"] }
-futures = "0.3.32"
+tokio = { version = "1.53.1", features = ["rt", "rt-multi-thread", "macros"] }
+futures = "0.3.34"
 netwatcher = { version = "0.7.1" }
-reqwest = { version = "0.13.3", features = ["json"] }
-serde_json = "1.0.149"
-config = "0.15.22"
-serde = { version = "1.0.228", features = ["derive"] }
-async-trait = "0.1.89"
-thiserror = "2.0.18"
+reqwest = { version = "0.13.4", features = ["json"] }
+serde_json = "1.0.151"
+config = "0.15.25"
+serde = { version = "1.0.229", features = ["derive"] }
+async-trait = "0.1.92"
+thiserror = "2.0.20"
 scopeguard = "1.2.0"
 
-clap = { version = "4.6.1", features = ["derive"] }
+clap = { version = "4.6.6", features = ["derive"] }
 
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = [
@@ -28,7 +28,7 @@ tracing-subscriber = { version = "0.3.23", features = [
     "time",
 ] }
 tracing-appender = "0.2.5"
-time = { version = "0.3.47", features = ["formatting", "macros"] }
+time = { version = "0.3.55", features = ["formatting", "macros"] }
 rxrust = { version = "0.15.0", features = ["tokio-scheduler"] }
 
 windows = { version = "0.62.2", features = [
@@ -39,5 +39,5 @@ windows = { version = "0.62.2", features = [
 ] }
 
 # The versions of rtnetlink and netlink-packet-route must match.
-rtnetlink = "0.21.0"
-netlink-packet-route = "0.30.0"
+rtnetlink = "0.22.0"
+netlink-packet-route = "0.32.1"

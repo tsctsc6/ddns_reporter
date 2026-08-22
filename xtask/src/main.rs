@@ -134,7 +134,7 @@ fn release() -> Result<()> {
     } else {
         sh.copy_file(
             format!("./target/release/{}", get_name()),
-            format!("./dist/{}/{}.exe", get_target_folder_name(), get_name(),),
+            format!("./dist/{}/{}", get_target_folder_name(), get_name(),),
         )?;
     }
 

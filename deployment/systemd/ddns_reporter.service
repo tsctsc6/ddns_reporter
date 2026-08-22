@@ -1,0 +1,26 @@
+[Unit]
+Description=A software that sends the local machine's IPv6 address (temporary address preferred) to a DDNS server.
+Documentation=https://github.com/tsctsc6/ddns_reporter
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ddns_reporter
+Group=ddns_reporter
+WorkingDirectory=/opt/ddns_reporter
+ExecStart=/usr/local/bin/ddns_reporter
+
+Restart=on-failure
+RestartSec=5s
+
+LimitNOFILE=65535
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
